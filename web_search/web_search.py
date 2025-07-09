@@ -21,8 +21,9 @@ class WebSearcher:
     def marge_keyword(self):
         try:
             query = []
+            query.append(self.keyword["enterprise"])
             for product in self.keyword["product"]:
-                query.append(self.keyword["enterprise"] + product)
+                query.append(self.keyword["enterprise"] + "+" + product)
             return query
         except Exception as e:
             print(f"[ERROR] marge_keyword failed: {e}")
