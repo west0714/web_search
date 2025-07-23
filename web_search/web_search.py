@@ -12,6 +12,9 @@ import random
 class WebSearcher:
     def __init__(self, keyword):
         self.keyword = keyword
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102 Safari/537.36"
+        }
         try:
             self.results = self.total_actions()
         except Exception as e:
@@ -32,14 +35,14 @@ class WebSearcher:
     def fetch_article_content(self, url):
         try:
             if url.endswith('.pdf'):
-                response = requests.get(url)
+                response = requests.get(url, headers=self.headers)
                 pdf_document = fitz.open(stream=response.content, filetype="pdf")
                 content = ""
                 for page in pdf_document:
                     content += page.get_text()
                 pdf_document.close()
             else:
-                response = requests.get(url)
+                response = requests.get(url, headers=self.headers)
                 soup = BeautifulSoup(response.content, "html.parser")
                 body = soup.body
                 tables = ''.join([str(table) for table in body.find_all('table')])
@@ -63,7 +66,7 @@ class WebSearcher:
         for q in query:
             try:
                 url = f"https://duckduckgo.com/html/?q={q.replace(' ', '+')}"
-                response = requests.get(url)
+                response = requests.get(url, headers=self.headers)
                 soup = BeautifulSoup(response.text, "html.parser")
                 query_result = {"query": q, "results": []}
                 for result in soup.select(".result__title")[:2]:
@@ -90,3 +93,12 @@ class WebSearcher:
             return results
         except Exception as e:
             print(f"[ERROR] total_actions failed: {e}")
+
+
+if __name__ == "__main__":
+    keyword = {
+        "enterprise": "日本碍子株式会社",
+        "product": ["エネセラ"]
+    }
+    searcher = WebSearcher(keyword)
+    print(searcher.results)
