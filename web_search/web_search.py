@@ -12,8 +12,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 class WebSearcher:
-    def __init__(self, keyword):
+    def __init__(self, keyword, item_count=10, content_length=None):
         self.keyword = keyword
+        self.item_count = item_count
+        self.content_length = content_length
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102 Safari/537.36"
         }
@@ -82,7 +84,6 @@ class WebSearcher:
             timeout_seconds = 10
             if url.endswith('.pdf'):
                 response = requests.get(url, headers=self.headers, timeout=timeout_seconds)
-                print(f"[INFO] Fetching PDF content from {url}")
                 pdf_document = fitz.open(stream=response.content, filetype="pdf")
                 content = ""
                 for page in pdf_document:
@@ -90,7 +91,6 @@ class WebSearcher:
                 pdf_document.close()
             else:
                 response = requests.get(url, headers=self.headers, timeout=timeout_seconds)
-                print(f"[INFO] Fetching HTML content from {url}")
                 soup = BeautifulSoup(response.content, "html.parser")
                 body = soup.body
                 tables = ''.join([str(table) for table in body.find_all('table')])
@@ -105,13 +105,11 @@ class WebSearcher:
                 text = body.get_text(strip=True, separator="\n")
                 content = text + "\n" + tables
             if "Additional Verification Required" in content or "Enable JavaScript" in content:
-                print(f"[INFO-SELENIUM] Content requires additional verification, using Selenium for {url}")
                 content = self.scraping_with_selenium(url)
-            print(f"[INFO-END] Successfully fetched content from {url}")
             return content
         except requests.exceptions.Timeout:
-            print(f"[ERROR] Timeout while fetching {url}")
-            return ""
+            content = self.scraping_with_selenium(url)
+            return content
         except Exception as e:
             print(f"[ERROR] fetch_article_content failed for {url}: {e}")
             return ""
@@ -125,16 +123,19 @@ class WebSearcher:
                 content = self.scraping_return_content(url)
                 soup = BeautifulSoup(content, "html.parser")
                 query_result = {"query": q, "results": []}
-                for result in soup.select(".result__title")[:5]:
+                for result in soup.select(".result__title")[:self.item_count]:
                     link = result.find("a")["href"]
                     parsed = urllib.parse.urlparse("https:" + link)
                     query = urllib.parse.parse_qs(parsed.query)
                     real_url = query["uddg"][0]
-                    print(f"[INFO-START] Found link : {real_url}")
                     content = self.fetch_article_content(real_url)
+                    if self.content_length is None:
+                        limit_content = content
+                    else:
+                        limit_content = content[:self.content_length]
                     query_result["results"].append({
                         "link": real_url,
-                        "content": content[:200]
+                        "content": limit_content
                     })
                 query_results.append(query_result)
                 time.sleep(random.uniform(10, 12))
@@ -157,7 +158,11 @@ if __name__ == "__main__":
         "enterprise": "製造業　求人　自動車",
         "product": []
     }
-    searcher = WebSearcher(keyword)
+    #件数を指定(１０件以内)
+    item_count = 2
+    #内容の文字数指定
+    # content_length = 500
+    searcher = WebSearcher(keyword, item_count)
     print(searcher.results)
 
 # #ウェブ検索(キーワード有りのみ)

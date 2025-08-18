@@ -29,7 +29,13 @@ keyword = {
     "enterprise": "トヨタ",
     "product": ["クラウン", "プリウス"]
 }
-searcher = WebSearcher(keyword).results
+ーー追加の条件指定（指定しない場合は入力不要）ーー
+#件数を指定(１０件以内)
+item_count = 2
+#内容の文字数指定
+content_length = 500
+
+searcher = WebSearcher(keyword, item_count, content_length).results
 ```
 ### 3. 出力
 ```python
