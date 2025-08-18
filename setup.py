@@ -7,7 +7,8 @@ setup(
     install_requires=[
         "requests",
         "beautifulsoup4",
-        "PyMuPDF"
+        "PyMuPDF",
+        "selenium",
     ],
     author="Nishio",
     description="A tool to perform DuckDuckGo search and extract contents.",
